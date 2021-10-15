@@ -32,6 +32,7 @@ namespace ReprocesoTravelAce
                     new Utiles.Utiles(), 
                     new Pago());
                 gestionador.EmitirCotizaciones();
+                gestionador.ConsultarPolizasCargadasAcsel();
                 logger.Info("___________FIN___________");
             }
             catch (Exception ex)

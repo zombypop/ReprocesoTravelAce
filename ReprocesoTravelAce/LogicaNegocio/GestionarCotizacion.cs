@@ -20,11 +20,14 @@ namespace ReprocesoTravelAce.LogicaNegocio
         private readonly Utiles.Utiles utiles;
         private readonly Pago pago;
 
+        private List<CotizacionDto> listaCotizaciones;
+
         public GestionarCotizacion(IAccesoDatos accesoDatos, Utiles.Utiles utiles, Pago pago)
         {
             this.accesoDatos = accesoDatos;
             this.utiles = utiles;
             this.pago = pago;
+            this.listaCotizaciones = new List<CotizacionDto>();
         }
 
         public void LlamarSitioExito(int nroCotizacion)
@@ -45,15 +48,23 @@ namespace ReprocesoTravelAce.LogicaNegocio
         {
             foreach (var item in cotizaciones)
             {
-                var estaPagada = VerificarPagoServicio($"APV_{item.NUMEROCOTIZACION}");
-                if (estaPagada)
+                foreach (var intencion in item.IntencionesPago)
                 {
-                    //existe en url pdf?
-                    var urlPoliza = $"https://asistenciatravelace.bciseguros.cl/Bandeja/Poliza/{item.NUMEROPOLIZA}.pdf";
-                    if (GetResponse(urlPoliza) == false)
+                    if (VerificarPagoServicio(intencion.TRX_ID))
                     {
-                        LlamarSitioExito(item.NUMEROCOTIZACION);
-                        logger.Info("Emite: {@cotizacion}", item);
+                        item.Pagada = true;
+                        //logger.Info("Intenciona pagada: {cot} --> {idtrx}", item.NUMEROCOTIZACION , intencion.TRX_ID);
+                        //existe en url pdf?
+                        var urlPoliza = $"https://asistenciatravelace.bciseguros.cl/Bandeja/Poliza/{item.NUMEROPOLIZA}.pdf";
+                        if (GetResponse(urlPoliza) == false)
+                        {
+                            LlamarSitioExito(item.NUMEROCOTIZACION);
+                            logger.Info("EMITE: {@cot}", item);
+                        }
+                        //else
+                        //{
+                        //    logger.Info("Ya existe poliza: {@cot}", item.NUMEROCOTIZACION);
+                        //}
                     }
                 }
             }
@@ -73,22 +84,39 @@ namespace ReprocesoTravelAce.LogicaNegocio
         bool GetResponse(string url)
         {
             var client = new RestClient(url);
-            var request = new RestRequest("", RestSharp.Method.POST);
+            var request = new RestRequest(RestSharp.Method.GET);
+            request.AddHeader("Accept", "application/pdf");
             var response = client.Execute(request);
+            //var data = client.DownloadData(request);
             return response.IsSuccessful;
         }
 
 
         public void EmitirCotizaciones()
         {
-            var lista = ObtenerCotizacionesPagadasNoEmitidas();
-            RecorrerCotizacionesParaEmitir(lista);
+            listaCotizaciones = ObtenerCotizacionesPagadasNoEmitidas();
+            foreach (var item in listaCotizaciones)
+            {
+                item.IntencionesPago = accesoDatos.ListaIntenciones(item.NUMEROCOTIZACION);
+            }
+            RecorrerCotizacionesParaEmitir(listaCotizaciones);
         }
 
         public bool VerificarPagoServicio(string idtrx)
         {
             var esPago = pago.ValidarPagoWebPay(idtrx);
             return esPago.PagoOk;
+        }
+
+        public void ConsultarPolizasCargadasAcsel()
+        {
+            foreach (var item in listaCotizaciones.Where(x=>x.Pagada) )
+            {
+                if (!accesoDatos.ExisteEnAcselX(item.NUMEROPOLIZA))
+                {
+                    logger.Info("Poliza {pol} NO esta cargada en Acsel", item.NUMEROPOLIZA);
+                }
+            }
         }
 
     }

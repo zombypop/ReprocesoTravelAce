@@ -10,5 +10,7 @@ namespace ReprocesoTravelAce.Interfaces
     public interface IAccesoDatos
     {
         List<CotizacionDto> ListaCotizaciones();
+        List<IntencionPago> ListaIntenciones(int numeroCotizacion);
+        bool ExisteEnAcselX(int numeroPoliza);
     }
 }

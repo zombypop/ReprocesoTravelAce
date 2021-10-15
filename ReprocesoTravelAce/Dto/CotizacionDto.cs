@@ -10,5 +10,12 @@ namespace ReprocesoTravelAce.Dto
     {
         public int NUMEROCOTIZACION { get; set; }
         public int NUMEROPOLIZA { get; set; }
+        public List<IntencionPago> IntencionesPago { get; set; }
+        public bool Pagada { get; set; }
+    }
+
+    public class IntencionPago
+    {
+        public string TRX_ID { get; set; }
     }
 }
