@@ -41,7 +41,7 @@ namespace ReprocesoTravelAce.Implementacion
                             AND NROCOTTRAVELACE IS NOT  NULL 
                             /*AND ESTADOCARGAASCEL IS NULL*/
                             AND NUMEROPOLIZA IS NOT NULL
-                            AND FECHACOTIZACION > SYSDATE-60 AND NUMEROCOTIZACION != 578704 ";
+                            AND FECHACOTIZACION > SYSDATE-60 /* AND NUMEROCOTIZACION IN ( 578704 , 580301) */ ";
 
 
                 var lista = con.Query<CotizacionDto>(qry).ToList();
